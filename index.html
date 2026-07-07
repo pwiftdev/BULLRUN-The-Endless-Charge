@@ -4,7 +4,12 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>BULLRUN: The Endless Charge</title>
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐂</text></svg>" />
+  <link rel="icon" type="image/jpeg" href="/bullrunlogo.jpeg" />
+  <link rel="apple-touch-icon" href="/bullrunlogo.jpeg" />
+  <meta name="theme-color" content="#0a0e24" />
+  <meta property="og:title" content="BULLRUN: The Endless Charge" />
+  <meta property="og:description" content="A free-to-play voxel endless runner for $BULLRUN on Solana. Saddle up and charge the leaderboard." />
+  <meta property="og:image" content="/bullrunlogo.jpeg" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Rye&family=Rubik:wght@400;600;800&display=swap" rel="stylesheet" />
@@ -33,6 +38,57 @@
     }
 
     .hidden { display: none !important; }
+
+    /* ---------- preloader ---------- */
+    #loader {
+      position: fixed; inset: 0; z-index: 100;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 4px;
+      background:
+        radial-gradient(ellipse at 50% 34%, #2a2140, #0a0e24 70%);
+      transition: opacity 0.6s ease;
+    }
+    #loader.done { opacity: 0; pointer-events: none; }
+    .loader-logo {
+      width: min(190px, 46vw); height: auto;
+      border-radius: 22px;
+      border: 3px solid rgba(245,197,66,0.9);
+      box-shadow: 0 0 0 4px rgba(36,22,16,0.6), 0 18px 50px rgba(0,0,0,0.6),
+        0 0 60px rgba(245,197,66,0.25);
+      animation: loaderPulse 2.2s ease-in-out infinite;
+    }
+    @keyframes loaderPulse {
+      0%, 100% { transform: translateY(0) scale(1); box-shadow: 0 0 0 4px rgba(36,22,16,0.6), 0 18px 50px rgba(0,0,0,0.6), 0 0 50px rgba(245,197,66,0.2); }
+      50% { transform: translateY(-8px) scale(1.02); box-shadow: 0 0 0 4px rgba(36,22,16,0.6), 0 26px 60px rgba(0,0,0,0.6), 0 0 80px rgba(245,197,66,0.4); }
+    }
+    .loader-title {
+      font-family: 'Rye', serif; font-size: clamp(2rem, 8vw, 3rem);
+      color: var(--gold); letter-spacing: 0.05em; margin-top: 22px; line-height: 1;
+      text-shadow: 0 2px 0 rgba(0,0,0,0.35), 0 0 24px rgba(245,197,66,0.35);
+    }
+    .loader-sub {
+      font-family: 'Rye', serif; font-size: clamp(0.7rem, 2.6vw, 0.95rem);
+      letter-spacing: 0.32em; text-transform: uppercase; color: #d8c9a8;
+      margin-top: 6px; opacity: 0.85;
+    }
+    .loader-bar {
+      width: min(240px, 60vw); height: 8px; margin-top: 22px;
+      background: rgba(255,255,255,0.12); border-radius: 999px; overflow: hidden;
+      box-shadow: inset 0 0 0 1px rgba(245,197,66,0.25);
+    }
+    .loader-bar span {
+      display: block; height: 100%; width: 40%; border-radius: 999px;
+      background: linear-gradient(90deg, var(--gold-dark), var(--gold-light), var(--gold-dark));
+      animation: loaderSlide 1.15s cubic-bezier(0.5, 0, 0.5, 1) infinite;
+    }
+    @keyframes loaderSlide {
+      0% { transform: translateX(-110%); }
+      100% { transform: translateX(360%); }
+    }
+    .loader-tip {
+      font-size: 0.78rem; font-weight: 600; letter-spacing: 0.04em;
+      color: #b8ab8d; margin-top: 16px; opacity: 0.8;
+    }
 
     /* ---------- overlays ---------- */
     .overlay {
@@ -72,6 +128,18 @@
       animation: sway 3.5s ease-in-out infinite;
     }
     @keyframes sway { 0%,100% { transform: rotate(-4deg); } 50% { transform: rotate(4deg); } }
+    .emblem-img {
+      width: clamp(96px, 30vw, 132px); height: auto; display: block;
+      margin: 0 auto 2px;
+      border-radius: 18px;
+      border: 3px solid var(--ink);
+      box-shadow: 0 0 0 3px var(--gold), 0 10px 24px rgba(0,0,0,0.45);
+      animation: emblemFloat 3.6s ease-in-out infinite;
+    }
+    @keyframes emblemFloat {
+      0%, 100% { transform: translateY(0) rotate(-1.2deg); }
+      50% { transform: translateY(-6px) rotate(1.2deg); }
+    }
 
     h1.brand {
       font-family: 'Rye', serif;
@@ -277,12 +345,22 @@
     @media (max-height: 680px) {
       .card { padding: 18px 22px; }
       .emblem { font-size: 2rem; }
+      .emblem-img { width: clamp(76px, 22vw, 100px); }
       .hr { margin: 11px 0; }
       form#signup { gap: 9px; }
     }
   </style>
 </head>
 <body>
+  <!-- PRELOADER -->
+  <div id="loader">
+    <img src="/bullrunlogo.jpeg" alt="BULLRUN" class="loader-logo" />
+    <div class="loader-title">BULLRUN</div>
+    <div class="loader-sub">The Endless Charge</div>
+    <div class="loader-bar"><span></span></div>
+    <div class="loader-tip" id="loader-tip">Saddling up…</div>
+  </div>
+
   <div id="game"></div>
   <div id="vignette"></div>
 
@@ -302,7 +380,7 @@
   <!-- MENU / SIGNUP -->
   <div id="menu" class="overlay">
     <div class="card">
-      <div class="emblem">🐂</div>
+      <img class="emblem-img" src="/bullrunlogo.jpeg" alt="BULLRUN" />
       <h1 class="brand">BULLRUN</h1>
       <div class="sub">The Endless Charge</div>
       <div class="ticker"><span class="dot"></span> $BULLRUN · SOLANA</div>
