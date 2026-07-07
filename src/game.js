@@ -20,17 +20,28 @@ export class Game {
   constructor(container) {
     this.container = container;
 
-    this.renderer = new THREE.WebGLRenderer({ antialias: true });
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    // AA is handled by the composer's multisampled target, so the renderer
+    // itself skips MSAA. high-performance asks for the discrete GPU.
+    this.renderer = new THREE.WebGLRenderer({
+      antialias: false,
+      powerPreference: 'high-performance',
+      stencil: false,
+    });
+    // Cap the device pixel ratio: on a retina panel native DPR is 2-3, which
+    // is 4-9x the fragments. 1.6 looks crisp for a voxel game at a fraction
+    // of the fill cost. The adaptive scaler tunes down from here under load.
+    this.maxDPR = Math.min(window.devicePixelRatio || 1, 1.6);
+    this.dpr = this.maxDPR;
+    this.renderer.setPixelRatio(this.dpr);
     this.renderer.setSize(window.innerWidth, window.innerHeight);
     this.renderer.shadowMap.enabled = true;
-    this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    this.renderer.shadowMap.type = THREE.PCFShadowMap;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
     this.renderer.toneMappingExposure = 1.05;
     container.appendChild(this.renderer.domElement);
 
     this.scene = new THREE.Scene();
-    this.scene.fog = new THREE.Fog(0xdfeacc, 32, 180);
+    this.scene.fog = new THREE.Fog(0xdfeacc, 32, 170);
 
     this.camera = new THREE.PerspectiveCamera(62, window.innerWidth / window.innerHeight, 0.1, 900);
     this.camera.position.set(3.6, 2.0, 7.4);
@@ -40,14 +51,15 @@ export class Game {
     this.scene.add(this.hemi);
     this.sun = new THREE.DirectionalLight(0xfff3d0, 1.25);
     this.sun.castShadow = true;
-    this.sun.shadow.mapSize.set(2048, 2048);
+    // 1024 over a ~44-unit frustum is still sharp for blocky geometry.
+    this.sun.shadow.mapSize.set(1024, 1024);
     this.sun.shadow.camera.left = -22;
     this.sun.shadow.camera.right = 22;
     this.sun.shadow.camera.top = 26;
     this.sun.shadow.camera.bottom = -14;
     this.sun.shadow.camera.near = 1;
     this.sun.shadow.camera.far = 80;
-    this.sun.shadow.bias = -0.0006;
+    this.sun.shadow.bias = -0.0008;
     this.sun.target.position.set(0, 0, -10);
     this.scene.add(this.sun, this.sun.target);
 
@@ -55,10 +67,10 @@ export class Game {
     this.fill = new THREE.DirectionalLight(0xbfd9ff, 0.2);
     this.scene.add(this.fill);
 
-    // Post-processing: MSAA render target + bloom for sun, coins and glow.
-    const rt = new THREE.WebGLRenderTarget(1, 1, { samples: 4, type: THREE.HalfFloatType });
+    // Post-processing: 2x MSAA render target + bloom for sun, coins and glow.
+    const rt = new THREE.WebGLRenderTarget(1, 1, { samples: 2, type: THREE.HalfFloatType });
     this.composer = new EffectComposer(this.renderer, rt);
-    this.composer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    this.composer.setPixelRatio(this.dpr);
     this.composer.setSize(window.innerWidth, window.innerHeight);
     this.composer.addPass(new RenderPass(this.scene, this.camera));
     this.bloom = new UnrealBloomPass(
@@ -86,6 +98,10 @@ export class Game {
     this.menuT = 0;
     this.ui = null;
 
+    // Adaptive resolution: hold ~60fps by nudging pixel ratio up/down.
+    this._fpsEMA = 60;
+    this._perfT = 0;
+
     this.clock = new THREE.Clock();
     this._lookAt = new THREE.Vector3();
     this._camTarget = new THREE.Vector3();
@@ -97,6 +113,27 @@ export class Game {
 
   get score() {
     return Math.floor(this.distance + this.coins * 25);
+  }
+
+  /* ---------------- adaptive resolution ---------------- */
+
+  setDPR(d) {
+    d = Math.max(0.8, Math.min(this.maxDPR, d));
+    if (Math.abs(d - this.dpr) < 0.02) return;
+    this.dpr = d;
+    this.renderer.setPixelRatio(d);
+    this.composer.setPixelRatio(d);
+  }
+
+  tuneResolution(raw) {
+    // raw is clamped to 0.05 upstream, so a choppy frame reads as 20fps.
+    const fps = 1 / Math.max(raw, 1e-3);
+    this._fpsEMA += (fps - this._fpsEMA) * 0.1;
+    this._perfT += raw;
+    if (this._perfT < 0.7) return;
+    this._perfT = 0;
+    if (this._fpsEMA < 52 && this.dpr > 0.8) this.setDPR(this.dpr - 0.15);
+    else if (this._fpsEMA > 58 && this.dpr < this.maxDPR) this.setDPR(this.dpr + 0.1);
   }
 
   /* ---------------- state ---------------- */
@@ -180,6 +217,7 @@ export class Game {
 
   frame() {
     const raw = Math.min(this.clock.getDelta(), 0.05);
+    this.tuneResolution(raw);
 
     // Cinematic slow-mo on death.
     const targetScale = this.state === 'dead' ? 0.14 : 1;

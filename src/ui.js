@@ -12,10 +12,12 @@ export class UI {
 
     this.menu = $('menu');
     this.dead = $('dead');
+    this.board = $('leaderboard');
     this.hudEl = $('hud');
     this.toastEl = $('toast');
     this.toastTimer = null;
     this.lastHud = 0;
+    this.rows = [];
 
     // Restore saved rider.
     try {
@@ -23,6 +25,7 @@ export class UI {
       if (saved) {
         $('in-user').value = saved.username || '';
         $('in-addr').value = saved.address || '';
+        this.rider = saved;
       }
     } catch { /* ignore */ }
 
@@ -40,7 +43,7 @@ export class UI {
       this.hudEl.classList.add('hidden');
       this.menu.classList.remove('hidden');
       this.game.toMenu();
-      this.loadLeaderboard('lb-menu');
+      this.loadPreview('lb-menu');
     });
     $('mute').addEventListener('click', () => {
       this.game.audio.init();
@@ -48,7 +51,22 @@ export class UI {
       $('mute').textContent = on ? '🔊' : '🔇';
     });
 
-    this.loadLeaderboard('lb-menu');
+    // Full leaderboard screen.
+    $('btn-open-lb').addEventListener('click', () => this.openBoard());
+    $('btn-lb-close').addEventListener('click', () => this.board.classList.add('hidden'));
+    $('lb-refresh').addEventListener('click', () => this.loadFullBoard(true));
+    this.board.addEventListener('click', (e) => {
+      if (e.target === this.board) this.board.classList.add('hidden');
+      const btn = e.target.closest('.copy-btn');
+      if (btn) this.copyWallet(btn);
+    });
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && !this.board.classList.contains('hidden')) {
+        this.board.classList.add('hidden');
+      }
+    });
+
+    this.loadPreview('lb-menu');
   }
 
   trySaddleUp() {
@@ -129,30 +147,93 @@ export class UI {
       status.style.color = '#a63c2e';
       status.textContent = `Couldn't reach the leaderboard: ${e.message}`;
     }
-    this.loadLeaderboard('lb-dead');
+    this.loadPreview('lb-dead');
   }
 
-  /* ---------- leaderboard ---------- */
+  /* ---------- compact top-3/10 preview ---------- */
 
-  async loadLeaderboard(listId) {
+  async loadPreview(listId) {
     const ol = $(listId);
     try {
-      const res = await fetch('/api/leaderboard');
-      const rows = await res.json();
-      if (!rows.length) {
+      this.rows = await (await fetch('/api/leaderboard')).json();
+      if (!this.rows.length) {
         ol.innerHTML = '<li class="empty">No runs yet. Be the first legend.</li>';
         return;
       }
-      ol.innerHTML = rows.slice(0, 10).map((r) => `
+      ol.innerHTML = this.rows.slice(0, 5).map((r) => `
         <li>
           <span class="rk">${medals[r.rank - 1] || r.rank}</span>
           <span class="nm">${escapeHtml(r.username)}</span>
-          <span class="ad">${short(r.address)}</span>
           <span class="sc">${r.score.toLocaleString()}</span>
         </li>`).join('');
     } catch {
       ol.innerHTML = '<li class="empty">Leaderboard is offline.</li>';
     }
+  }
+
+  /* ---------- full leaderboard screen ---------- */
+
+  openBoard() {
+    this.game.audio.init();
+    this.board.classList.remove('hidden');
+    this.loadFullBoard();
+  }
+
+  async loadFullBoard(force) {
+    const el = $('lb-full');
+    if (force) el.innerHTML = '<div class="lb-state">Refreshing…</div>';
+    try {
+      this.rows = await (await fetch('/api/leaderboard')).json();
+      if (!this.rows.length) {
+        el.innerHTML = '<div class="lb-state">No runs yet — be the first legend on the board.</div>';
+        return;
+      }
+      const mine = this.rider ? this.rider.address : null;
+      el.innerHTML = this.rows.map((r, i) => {
+        const rank = medals[r.rank - 1] || `#${r.rank}`;
+        const isMe = r.address === mine;
+        const runs = r.runs ? `<small>${r.runs} run${r.runs === 1 ? '' : 's'}</small>` : '';
+        return `
+          <div class="lb-row ${r.rank <= 3 ? 'top' : ''} ${isMe ? 'me' : ''}" style="animation-delay:${Math.min(i, 12) * 24}ms">
+            <span class="r-rk">${rank}</span>
+            <span class="r-name">
+              <span class="u">${escapeHtml(r.username)}${isMe ? '<span class="youtag">YOU</span>' : ''}</span>
+            </span>
+            <span class="wallet">
+              <code>${short(r.address)}</code>
+              <button class="copy-btn" data-addr="${escapeHtml(r.address)}" title="Copy full address">⧉</button>
+            </span>
+            <span class="r-sc">${r.score.toLocaleString()}${runs}</span>
+          </div>`;
+      }).join('');
+    } catch {
+      el.innerHTML = '<div class="lb-state">Leaderboard is offline.</div>';
+    }
+  }
+
+  async copyWallet(btn) {
+    const addr = btn.dataset.addr;
+    try {
+      await navigator.clipboard.writeText(addr);
+    } catch {
+      // Fallback for insecure contexts.
+      const ta = document.createElement('textarea');
+      ta.value = addr;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      try { document.execCommand('copy'); } catch { /* ignore */ }
+      document.body.removeChild(ta);
+    }
+    const original = btn.textContent;
+    btn.textContent = '✓';
+    btn.classList.add('done');
+    clearTimeout(btn._t);
+    btn._t = setTimeout(() => {
+      btn.textContent = original;
+      btn.classList.remove('done');
+    }, 1200);
   }
 }
 

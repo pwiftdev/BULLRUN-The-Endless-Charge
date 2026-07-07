@@ -11,11 +11,14 @@
   <style>
     :root {
       --gold: #f5c542;
+      --gold-light: #ffd964;
       --gold-dark: #c99a1e;
       --ink: #241610;
+      --ink-soft: #4a3524;
       --paper: #f4e8ce;
       --paper-dark: #e6d4ae;
       --red: #a63c2e;
+      --red-dark: #8c2f24;
     }
     * { margin: 0; padding: 0; box-sizing: border-box; }
     html, body { height: 100%; overflow: hidden; background: #0a0e24; }
@@ -41,91 +44,198 @@
       overflow-y: auto;
     }
     .card {
-      background: linear-gradient(178deg, var(--paper), var(--paper-dark));
+      position: relative;
+      background:
+        radial-gradient(ellipse at 50% -10%, rgba(245,197,66,0.22), transparent 60%),
+        linear-gradient(178deg, var(--paper), var(--paper-dark));
       border: 3px solid var(--ink);
-      border-radius: 14px;
-      box-shadow: 0 0 0 3px var(--gold), 0 24px 60px rgba(0,0,0,0.6);
-      padding: 26px 30px;
-      width: min(430px, 94vw);
+      border-radius: 18px;
+      box-shadow: 0 0 0 3px var(--gold), 0 0 40px rgba(245,197,66,0.15), 0 28px 70px rgba(0,0,0,0.65);
+      padding: 30px 32px 26px;
+      width: min(440px, 94vw);
       text-align: center;
+      animation: rise 0.5s cubic-bezier(0.2, 0.9, 0.3, 1);
     }
+    /* corner rivets for a saloon-poster feel */
+    .card::before, .card::after {
+      content: ''; position: absolute; width: 8px; height: 8px; border-radius: 50%;
+      background: var(--ink); box-shadow: 0 0 0 2px var(--gold);
+      top: 12px;
+    }
+    .card::before { left: 12px; }
+    .card::after { right: 12px; }
+    @keyframes rise { from { opacity: 0; transform: translateY(18px) scale(0.97); } }
+
+    .emblem {
+      font-size: 2.7rem; line-height: 1;
+      filter: drop-shadow(0 3px 6px rgba(0,0,0,0.3));
+      animation: sway 3.5s ease-in-out infinite;
+    }
+    @keyframes sway { 0%,100% { transform: rotate(-4deg); } 50% { transform: rotate(4deg); } }
+
     h1.brand {
       font-family: 'Rye', serif;
-      font-size: clamp(2.2rem, 7vw, 3.4rem);
-      letter-spacing: 0.04em;
+      font-size: clamp(2.4rem, 8vw, 3.7rem);
+      letter-spacing: 0.03em;
       color: var(--red);
-      text-shadow: 0 2px 0 #fff2, 0 4px 0 rgba(0,0,0,0.18);
+      text-shadow: 0 2px 0 #fff5, 0 4px 0 rgba(0,0,0,0.2), 0 8px 16px rgba(166,60,46,0.3);
       line-height: 1;
+      margin-top: 2px;
     }
     .sub {
       font-family: 'Rye', serif;
-      font-size: clamp(0.8rem, 2.6vw, 1.05rem);
-      letter-spacing: 0.34em;
-      color: var(--ink);
+      font-size: clamp(0.78rem, 2.6vw, 1rem);
+      letter-spacing: 0.32em;
+      color: var(--ink-soft);
       margin: 8px 0 4px;
       text-transform: uppercase;
     }
     .ticker {
-      display: inline-block;
+      display: inline-flex; align-items: center; gap: 6px;
       background: var(--ink); color: var(--gold);
-      font-weight: 800; font-size: 0.8rem; letter-spacing: 0.12em;
-      padding: 3px 12px; border-radius: 999px; margin: 8px 0 18px;
+      font-weight: 800; font-size: 0.78rem; letter-spacing: 0.12em;
+      padding: 4px 14px; border-radius: 999px; margin: 10px 0 20px;
+      box-shadow: inset 0 0 0 1px rgba(245,197,66,0.3);
     }
-    .hr { height: 2px; background: repeating-linear-gradient(90deg, var(--ink) 0 8px, transparent 8px 14px); opacity: .35; margin: 14px 0; }
+    .ticker .dot { width: 7px; height: 7px; border-radius: 50%; background: #43d17a; box-shadow: 0 0 8px #43d17a; }
+    .hr { height: 2px; background: repeating-linear-gradient(90deg, var(--ink) 0 8px, transparent 8px 14px); opacity: .3; margin: 16px 0; }
 
-    form#signup { display: flex; flex-direction: column; gap: 10px; text-align: left; }
-    form#signup label { font-size: 0.72rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; opacity: 0.75; }
+    form#signup { display: flex; flex-direction: column; gap: 13px; text-align: left; }
+    .field { position: relative; }
+    .field label {
+      display: block; font-size: 0.7rem; font-weight: 800; letter-spacing: 0.1em;
+      text-transform: uppercase; opacity: 0.7; margin-bottom: 5px;
+    }
+    .field .ic {
+      position: absolute; left: 12px; bottom: 12px; font-size: 1rem; opacity: 0.6;
+      pointer-events: none;
+    }
     form#signup input {
       width: 100%;
       font: inherit; font-weight: 600;
-      padding: 11px 13px;
-      border: 2px solid var(--ink); border-radius: 9px;
+      padding: 12px 13px 12px 38px;
+      border: 2px solid var(--ink); border-radius: 10px;
       background: #fffaf0; color: var(--ink);
       outline: none;
+      transition: border-color 0.15s, box-shadow 0.15s;
     }
+    form#signup input::placeholder { color: #b09a72; font-weight: 500; }
     form#signup input:focus { border-color: var(--gold-dark); box-shadow: 0 0 0 3px rgba(245,197,66,0.35); }
     .err { color: var(--red); font-size: 0.82rem; font-weight: 600; min-height: 1.1em; text-align: center; }
 
     button.big {
-      font-family: 'Rye', serif; font-size: 1.25rem; letter-spacing: 0.06em;
-      padding: 13px 18px; margin-top: 4px;
+      font-family: 'Rye', serif; font-size: 1.3rem; letter-spacing: 0.05em;
+      padding: 14px 18px; margin-top: 2px;
       color: var(--ink);
-      background: linear-gradient(180deg, #ffd964, var(--gold) 45%, var(--gold-dark));
-      border: 3px solid var(--ink); border-radius: 10px;
+      background: linear-gradient(180deg, var(--gold-light), var(--gold) 45%, var(--gold-dark));
+      border: 3px solid var(--ink); border-radius: 12px;
       cursor: pointer;
-      box-shadow: 0 4px 0 var(--ink);
-      transition: transform 0.06s, box-shadow 0.06s;
+      box-shadow: 0 5px 0 var(--ink), 0 8px 16px rgba(0,0,0,0.3);
+      transition: transform 0.06s, box-shadow 0.06s, filter 0.1s;
     }
-    button.big:hover { filter: brightness(1.06); }
-    button.big:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--ink); }
+    button.big:hover { filter: brightness(1.07); }
+    button.big:active { transform: translateY(4px); box-shadow: 0 1px 0 var(--ink); }
     button.ghost {
-      font: inherit; font-weight: 800; font-size: 0.85rem;
+      font: inherit; font-weight: 800; font-size: 0.9rem;
+      display: inline-flex; align-items: center; justify-content: center; gap: 7px;
       background: transparent; color: var(--ink);
-      border: 2px solid var(--ink); border-radius: 9px;
-      padding: 10px 14px; cursor: pointer; letter-spacing: 0.05em;
+      border: 2px solid var(--ink); border-radius: 10px;
+      padding: 11px 14px; cursor: pointer; letter-spacing: 0.04em;
+      transition: background 0.12s, transform 0.06s;
     }
-    button.ghost:hover { background: rgba(0,0,0,0.06); }
+    button.ghost:hover { background: rgba(36,22,16,0.07); }
+    button.ghost:active { transform: translateY(2px); }
+    .full { width: 100%; }
 
-    .hint { font-size: 0.74rem; opacity: 0.65; margin-top: 12px; line-height: 1.5; }
-    .hint b { opacity: 1; }
+    .hint { font-size: 0.74rem; opacity: 0.62; margin-top: 14px; line-height: 1.6; }
+    .hint b { opacity: 1; color: var(--ink); }
+    .hint kbd {
+      font-family: inherit; font-weight: 800; background: rgba(36,22,16,0.1);
+      border: 1px solid rgba(36,22,16,0.25); border-radius: 5px; padding: 1px 6px;
+    }
 
-    /* ---------- leaderboard ---------- */
+    /* ---------- compact top-3 preview ---------- */
     .lb { text-align: left; margin-top: 6px; }
     .lb h3 {
       font-family: 'Rye', serif; text-align: center; font-size: 1rem;
-      letter-spacing: 0.18em; text-transform: uppercase; margin-bottom: 8px;
+      letter-spacing: 0.16em; text-transform: uppercase; margin-bottom: 10px; color: var(--ink);
     }
-    .lb ol { list-style: none; max-height: 200px; overflow-y: auto; }
+    .lb ol { list-style: none; }
     .lb li {
-      display: flex; align-items: baseline; gap: 8px;
-      font-size: 0.86rem; padding: 5px 8px; border-radius: 6px;
+      display: flex; align-items: center; gap: 9px;
+      font-size: 0.88rem; padding: 7px 10px; border-radius: 8px; margin-bottom: 3px;
     }
-    .lb li:nth-child(odd) { background: rgba(0,0,0,0.05); }
-    .lb .rk { width: 2em; font-weight: 800; flex: none; }
-    .lb .nm { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .lb .ad { font-size: 0.7rem; opacity: 0.55; font-family: monospace; flex: none; }
-    .lb .sc { margin-left: auto; font-weight: 800; color: #7a5a10; flex: none; }
+    .lb li:nth-child(odd) { background: rgba(36,22,16,0.05); }
+    .lb .rk { width: 1.7em; font-weight: 800; flex: none; text-align: center; }
+    .lb .nm { font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .lb .sc { margin-left: auto; font-weight: 800; color: #7a5a10; flex: none; font-variant-numeric: tabular-nums; }
     .lb .empty { text-align: center; opacity: 0.6; font-size: 0.85rem; padding: 12px 0; }
+
+    /* ---------- full leaderboard screen ---------- */
+    .lb-card {
+      width: min(560px, 96vw);
+      max-height: 88vh;
+      display: flex; flex-direction: column;
+      padding: 24px 24px 20px;
+    }
+    .lb-head { display: flex; align-items: center; gap: 12px; margin-bottom: 4px; }
+    .lb-head h2 {
+      font-family: 'Rye', serif; font-size: clamp(1.5rem, 5vw, 2rem);
+      color: var(--red); letter-spacing: 0.03em; flex: 1; text-align: left;
+      text-shadow: 0 2px 0 #fff4, 0 3px 0 rgba(0,0,0,0.15);
+    }
+    #btn-lb-close {
+      flex: none; width: 38px; height: 38px; border-radius: 10px;
+      border: 2px solid var(--ink); background: transparent; color: var(--ink);
+      font-size: 1.1rem; font-weight: 800; cursor: pointer; line-height: 1;
+    }
+    #btn-lb-close:hover { background: rgba(36,22,16,0.08); }
+    .lb-caption { text-align: left; font-size: 0.8rem; opacity: 0.7; margin-bottom: 14px; }
+    .lb-refresh { cursor: pointer; text-decoration: underline; font-weight: 700; }
+
+    .lb-table { overflow-y: auto; flex: 1; margin: 0 -6px; padding: 0 6px; }
+    .lb-cols {
+      display: grid; grid-template-columns: 2.6em 1fr auto auto;
+      gap: 10px; align-items: center;
+      font-size: 0.66rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase;
+      opacity: 0.55; padding: 0 10px 8px; position: sticky; top: 0;
+      background: linear-gradient(180deg, var(--paper) 70%, transparent);
+    }
+    .lb-cols .r-sc { text-align: right; }
+    .lb-row {
+      display: grid; grid-template-columns: 2.6em 1fr auto auto;
+      gap: 10px; align-items: center;
+      padding: 9px 10px; border-radius: 10px; margin-bottom: 4px;
+      background: rgba(36,22,16,0.045);
+      animation: rowin 0.3s ease both;
+    }
+    @keyframes rowin { from { opacity: 0; transform: translateX(-8px); } }
+    .lb-row.top { background: linear-gradient(90deg, rgba(245,197,66,0.28), rgba(245,197,66,0.08)); box-shadow: inset 0 0 0 1px rgba(201,154,30,0.4); }
+    .lb-row.me { box-shadow: inset 0 0 0 2px var(--red); }
+    .lb-row .r-rk { font-weight: 800; text-align: center; font-size: 1rem; font-variant-numeric: tabular-nums; }
+    .lb-row .r-name { min-width: 0; }
+    .lb-row .r-name .u { font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: block; }
+    .lb-row .r-name .youtag {
+      font-size: 0.6rem; font-weight: 800; color: #fff; background: var(--red);
+      padding: 1px 6px; border-radius: 999px; letter-spacing: 0.05em; margin-left: 4px;
+    }
+    .wallet { display: inline-flex; align-items: center; gap: 6px; }
+    .wallet code {
+      font-family: 'SF Mono', ui-monospace, monospace; font-size: 0.74rem;
+      opacity: 0.7; background: rgba(36,22,16,0.06); padding: 3px 7px; border-radius: 6px;
+    }
+    .copy-btn {
+      flex: none; width: 26px; height: 26px; border-radius: 6px;
+      border: 1px solid rgba(36,22,16,0.3); background: rgba(255,255,255,0.5);
+      cursor: pointer; font-size: 0.78rem; line-height: 1; color: var(--ink-soft);
+      transition: background 0.12s, transform 0.08s, color 0.12s;
+    }
+    .copy-btn:hover { background: var(--gold); color: var(--ink); }
+    .copy-btn:active { transform: scale(0.9); }
+    .copy-btn.done { background: #43d17a; color: #fff; border-color: #2ea85e; }
+    .lb-row .r-sc { text-align: right; font-weight: 800; color: #7a5a10; font-variant-numeric: tabular-nums; }
+    .lb-row .r-sc small { display: block; font-size: 0.62rem; font-weight: 600; color: var(--ink-soft); opacity: 0.7; }
+    .lb-state { text-align: center; opacity: 0.6; padding: 30px 0; font-weight: 600; }
 
     /* ---------- HUD ---------- */
     #hud { position: fixed; inset: 0; z-index: 10; pointer-events: none; }
@@ -164,9 +274,11 @@
     #submit-status { font-size: 0.82rem; font-weight: 600; min-height: 1.2em; margin: 6px 0; }
     .btn-row { display: flex; gap: 10px; justify-content: center; margin-top: 14px; }
 
-    @media (max-height: 640px) {
-      .card { padding: 16px 20px; }
-      .lb ol { max-height: 120px; }
+    @media (max-height: 680px) {
+      .card { padding: 18px 22px; }
+      .emblem { font-size: 2rem; }
+      .hr { margin: 11px 0; }
+      form#signup { gap: 9px; }
     }
   </style>
 </head>
@@ -190,20 +302,24 @@
   <!-- MENU / SIGNUP -->
   <div id="menu" class="overlay">
     <div class="card">
+      <div class="emblem">🐂</div>
       <h1 class="brand">BULLRUN</h1>
       <div class="sub">The Endless Charge</div>
-      <div class="ticker">$BULLRUN · SOLANA</div>
+      <div class="ticker"><span class="dot"></span> $BULLRUN · SOLANA</div>
       <form id="signup" novalidate>
-        <div>
+        <div class="field">
           <label for="in-user">Rider Name</label>
+          <span class="ic">🤠</span>
           <input id="in-user" type="text" maxlength="20" placeholder="e.g. DustyPete" autocomplete="off" />
         </div>
-        <div>
+        <div class="field">
           <label for="in-addr">Solana Public Address</label>
+          <span class="ic">◎</span>
           <input id="in-addr" type="text" maxlength="44" placeholder="Your SOL wallet address" autocomplete="off" spellcheck="false" />
         </div>
         <div class="err" id="signup-err"></div>
         <button class="big" type="submit">🐂 SADDLE UP</button>
+        <button class="ghost full" type="button" id="btn-open-lb">🏆 LEADERBOARDS</button>
       </form>
       <div class="hr"></div>
       <div class="lb">
@@ -211,9 +327,28 @@
         <ol id="lb-menu"><li class="empty">Fetching the board…</li></ol>
       </div>
       <p class="hint">
-        <b>◀ ▶</b> or <b>A/D</b> switch lanes &nbsp;·&nbsp; <b>▲ / Space</b> jump &nbsp;·&nbsp; <b>▼ / S</b> slide<br />
+        <kbd>◀ ▶</kbd> switch lanes &nbsp;·&nbsp; <kbd>▲</kbd> jump &nbsp;·&nbsp; <kbd>▼</kbd> slide<br />
         Swipe on mobile. Free to play — your best run is carved on the board.
       </p>
+    </div>
+  </div>
+
+  <!-- FULL LEADERBOARD -->
+  <div id="leaderboard" class="overlay hidden">
+    <div class="card lb-card">
+      <div class="lb-head">
+        <h2>🏆 Leaderboard</h2>
+        <button id="btn-lb-close" title="Close">✕</button>
+      </div>
+      <div class="lb-caption">
+        Top runners of the endless charge · <span class="lb-refresh" id="lb-refresh">refresh</span>
+      </div>
+      <div class="lb-cols">
+        <span>#</span><span>Rider</span><span>Wallet</span><span class="r-sc">Score</span>
+      </div>
+      <div class="lb-table" id="lb-full">
+        <div class="lb-state">Fetching the board…</div>
+      </div>
     </div>
   </div>
 
