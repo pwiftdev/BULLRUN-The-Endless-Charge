@@ -1,0 +1,18 @@
+{
+  "name": "bullrun-endless-charge",
+  "version": "1.0.0",
+  "description": "BULLRUN: The Endless Charge — a voxel endless runner for $BULLRUN",
+  "type": "module",
+  "scripts": {
+    "dev": "node server.js",
+    "build": "vite build",
+    "start": "NODE_ENV=production node server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "three": "^0.169.0"
+  },
+  "devDependencies": {
+    "vite": "^5.4.8"
+  }
+}

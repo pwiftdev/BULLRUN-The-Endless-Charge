@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>BULLRUN: The Endless Charge</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐂</text></svg>" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Rye&family=Rubik:wght@400;600;800&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --gold: #f5c542;
+      --gold-dark: #c99a1e;
+      --ink: #241610;
+      --paper: #f4e8ce;
+      --paper-dark: #e6d4ae;
+      --red: #a63c2e;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { height: 100%; overflow: hidden; background: #0a0e24; }
+    body { font-family: 'Rubik', system-ui, sans-serif; color: var(--ink); }
+    #game { position: fixed; inset: 0; }
+    #game canvas { display: block; }
+    #vignette {
+      position: fixed; inset: 0; z-index: 5; pointer-events: none;
+      background:
+        radial-gradient(ellipse at 50% 42%, transparent 55%, rgba(10, 8, 24, 0.38) 100%),
+        linear-gradient(180deg, rgba(10, 8, 24, 0.16), transparent 14%);
+    }
+
+    .hidden { display: none !important; }
+
+    /* ---------- overlays ---------- */
+    .overlay {
+      position: fixed; inset: 0; z-index: 20;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      background: radial-gradient(ellipse at 50% 30%, rgba(10,8,20,0.25), rgba(6,5,14,0.72));
+      backdrop-filter: blur(3px);
+      padding: 18px;
+      overflow-y: auto;
+    }
+    .card {
+      background: linear-gradient(178deg, var(--paper), var(--paper-dark));
+      border: 3px solid var(--ink);
+      border-radius: 14px;
+      box-shadow: 0 0 0 3px var(--gold), 0 24px 60px rgba(0,0,0,0.6);
+      padding: 26px 30px;
+      width: min(430px, 94vw);
+      text-align: center;
+    }
+    h1.brand {
+      font-family: 'Rye', serif;
+      font-size: clamp(2.2rem, 7vw, 3.4rem);
+      letter-spacing: 0.04em;
+      color: var(--red);
+      text-shadow: 0 2px 0 #fff2, 0 4px 0 rgba(0,0,0,0.18);
+      line-height: 1;
+    }
+    .sub {
+      font-family: 'Rye', serif;
+      font-size: clamp(0.8rem, 2.6vw, 1.05rem);
+      letter-spacing: 0.34em;
+      color: var(--ink);
+      margin: 8px 0 4px;
+      text-transform: uppercase;
+    }
+    .ticker {
+      display: inline-block;
+      background: var(--ink); color: var(--gold);
+      font-weight: 800; font-size: 0.8rem; letter-spacing: 0.12em;
+      padding: 3px 12px; border-radius: 999px; margin: 8px 0 18px;
+    }
+    .hr { height: 2px; background: repeating-linear-gradient(90deg, var(--ink) 0 8px, transparent 8px 14px); opacity: .35; margin: 14px 0; }
+
+    form#signup { display: flex; flex-direction: column; gap: 10px; text-align: left; }
+    form#signup label { font-size: 0.72rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; opacity: 0.75; }
+    form#signup input {
+      width: 100%;
+      font: inherit; font-weight: 600;
+      padding: 11px 13px;
+      border: 2px solid var(--ink); border-radius: 9px;
+      background: #fffaf0; color: var(--ink);
+      outline: none;
+    }
+    form#signup input:focus { border-color: var(--gold-dark); box-shadow: 0 0 0 3px rgba(245,197,66,0.35); }
+    .err { color: var(--red); font-size: 0.82rem; font-weight: 600; min-height: 1.1em; text-align: center; }
+
+    button.big {
+      font-family: 'Rye', serif; font-size: 1.25rem; letter-spacing: 0.06em;
+      padding: 13px 18px; margin-top: 4px;
+      color: var(--ink);
+      background: linear-gradient(180deg, #ffd964, var(--gold) 45%, var(--gold-dark));
+      border: 3px solid var(--ink); border-radius: 10px;
+      cursor: pointer;
+      box-shadow: 0 4px 0 var(--ink);
+      transition: transform 0.06s, box-shadow 0.06s;
+    }
+    button.big:hover { filter: brightness(1.06); }
+    button.big:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--ink); }
+    button.ghost {
+      font: inherit; font-weight: 800; font-size: 0.85rem;
+      background: transparent; color: var(--ink);
+      border: 2px solid var(--ink); border-radius: 9px;
+      padding: 10px 14px; cursor: pointer; letter-spacing: 0.05em;
+    }
+    button.ghost:hover { background: rgba(0,0,0,0.06); }
+
+    .hint { font-size: 0.74rem; opacity: 0.65; margin-top: 12px; line-height: 1.5; }
+    .hint b { opacity: 1; }
+
+    /* ---------- leaderboard ---------- */
+    .lb { text-align: left; margin-top: 6px; }
+    .lb h3 {
+      font-family: 'Rye', serif; text-align: center; font-size: 1rem;
+      letter-spacing: 0.18em; text-transform: uppercase; margin-bottom: 8px;
+    }
+    .lb ol { list-style: none; max-height: 200px; overflow-y: auto; }
+    .lb li {
+      display: flex; align-items: baseline; gap: 8px;
+      font-size: 0.86rem; padding: 5px 8px; border-radius: 6px;
+    }
+    .lb li:nth-child(odd) { background: rgba(0,0,0,0.05); }
+    .lb .rk { width: 2em; font-weight: 800; flex: none; }
+    .lb .nm { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .lb .ad { font-size: 0.7rem; opacity: 0.55; font-family: monospace; flex: none; }
+    .lb .sc { margin-left: auto; font-weight: 800; color: #7a5a10; flex: none; }
+    .lb .empty { text-align: center; opacity: 0.6; font-size: 0.85rem; padding: 12px 0; }
+
+    /* ---------- HUD ---------- */
+    #hud { position: fixed; inset: 0; z-index: 10; pointer-events: none; }
+    .hud-panel {
+      position: absolute; top: 14px;
+      font-weight: 800; color: #fff;
+      text-shadow: 0 2px 6px rgba(0,0,0,0.55);
+    }
+    #hud-left { left: 18px; }
+    #hud-right { right: 18px; text-align: right; }
+    #hud-score { font-family: 'Rye', serif; font-size: clamp(1.6rem, 5vw, 2.4rem); color: var(--gold); letter-spacing: 0.04em; }
+    #hud-coins, #hud-dist, #hud-speed { font-size: clamp(0.85rem, 2.6vw, 1.05rem); opacity: 0.95; }
+    #hud-coins { color: #ffe08a; }
+    #toast {
+      position: absolute; top: 22%; left: 50%; transform: translateX(-50%);
+      font-family: 'Rye', serif; font-size: clamp(1.4rem, 5vw, 2.6rem);
+      color: #fff; letter-spacing: 0.12em; text-align: center;
+      text-shadow: 0 0 22px rgba(245,197,66,0.75), 0 3px 10px rgba(0,0,0,0.6);
+      opacity: 0; transition: opacity 0.7s;
+      pointer-events: none; white-space: nowrap;
+    }
+    #toast.show { opacity: 1; }
+
+    #mute {
+      position: fixed; bottom: 14px; right: 14px; z-index: 30;
+      width: 42px; height: 42px; border-radius: 50%;
+      border: 2px solid rgba(255,255,255,0.55);
+      background: rgba(0,0,0,0.35); color: #fff;
+      font-size: 1.1rem; cursor: pointer;
+    }
+
+    /* ---------- game over ---------- */
+    #dead-title { font-family: 'Rye', serif; font-size: 2rem; color: var(--red); letter-spacing: 0.06em; }
+    #dead-score { font-family: 'Rye', serif; font-size: 3rem; color: #7a5a10; margin: 4px 0; }
+    .dead-stats { display: flex; justify-content: center; gap: 22px; font-size: 0.9rem; font-weight: 600; opacity: 0.8; margin-bottom: 6px; }
+    #submit-status { font-size: 0.82rem; font-weight: 600; min-height: 1.2em; margin: 6px 0; }
+    .btn-row { display: flex; gap: 10px; justify-content: center; margin-top: 14px; }
+
+    @media (max-height: 640px) {
+      .card { padding: 16px 20px; }
+      .lb ol { max-height: 120px; }
+    }
+  </style>
+</head>
+<body>
+  <div id="game"></div>
+  <div id="vignette"></div>
+
+  <!-- HUD -->
+  <div id="hud" class="hidden">
+    <div class="hud-panel" id="hud-left">
+      <div id="hud-score">0</div>
+      <div id="hud-coins">🪙 0</div>
+    </div>
+    <div class="hud-panel" id="hud-right">
+      <div id="hud-dist">0 m</div>
+      <div id="hud-speed">0 mph</div>
+    </div>
+    <div id="toast"></div>
+  </div>
+
+  <!-- MENU / SIGNUP -->
+  <div id="menu" class="overlay">
+    <div class="card">
+      <h1 class="brand">BULLRUN</h1>
+      <div class="sub">The Endless Charge</div>
+      <div class="ticker">$BULLRUN · SOLANA</div>
+      <form id="signup" novalidate>
+        <div>
+          <label for="in-user">Rider Name</label>
+          <input id="in-user" type="text" maxlength="20" placeholder="e.g. DustyPete" autocomplete="off" />
+        </div>
+        <div>
+          <label for="in-addr">Solana Public Address</label>
+          <input id="in-addr" type="text" maxlength="44" placeholder="Your SOL wallet address" autocomplete="off" spellcheck="false" />
+        </div>
+        <div class="err" id="signup-err"></div>
+        <button class="big" type="submit">🐂 SADDLE UP</button>
+      </form>
+      <div class="hr"></div>
+      <div class="lb">
+        <h3>⭐ Top Runners</h3>
+        <ol id="lb-menu"><li class="empty">Fetching the board…</li></ol>
+      </div>
+      <p class="hint">
+        <b>◀ ▶</b> or <b>A/D</b> switch lanes &nbsp;·&nbsp; <b>▲ / Space</b> jump &nbsp;·&nbsp; <b>▼ / S</b> slide<br />
+        Swipe on mobile. Free to play — your best run is carved on the board.
+      </p>
+    </div>
+  </div>
+
+  <!-- GAME OVER -->
+  <div id="dead" class="overlay hidden">
+    <div class="card">
+      <div id="dead-title">TRAMPLED!</div>
+      <div id="dead-score">0</div>
+      <div class="dead-stats">
+        <span id="dead-dist">0 m</span>
+        <span id="dead-coins">🪙 0</span>
+        <span id="dead-best">Best: 0</span>
+      </div>
+      <div id="submit-status"></div>
+      <div class="hr"></div>
+      <div class="lb">
+        <h3>⭐ Top Runners</h3>
+        <ol id="lb-dead"></ol>
+      </div>
+      <div class="btn-row">
+        <button class="big" id="btn-again">RUN AGAIN</button>
+        <button class="ghost" id="btn-menu">Change Rider</button>
+      </div>
+    </div>
+  </div>
+
+  <button id="mute" title="Toggle sound">🔊</button>
+
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>

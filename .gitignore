@@ -1,0 +1,13 @@
+# dependencies
+node_modules/
+
+# build output
+dist/
+
+# runtime data (leaderboard lives here — never commit player data)
+data/
+
+# local tooling
+.claude/settings.local.json
+.DS_Store
+*.log
