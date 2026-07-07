@@ -33,8 +33,10 @@ ever-shifting frontier, and carve your best score into the global leaderboard.
   ranges, procedural sky (sun, moon, twinkling stars, shooting stars, aurora),
   and ambient life (butterflies, birds, fireflies).
 - **Vite** — dev server + production bundling.
-- **Express** — tiny leaderboard API backed by a JSON file (`data/leaderboard.json`),
-  keeping each wallet's best score. No wallet connection required — players just
+- **Express (local dev) / Vercel serverless functions (production)** — the same
+  leaderboard logic (`lib/store.js`) backs both: an Express server for
+  `npm run dev`, and `api/leaderboard.js` + `api/score.js` on Vercel. Keeps
+  each wallet's best score. No wallet connection required — players just
   type their public address.
 - **Web Audio** — all sound effects are synthesized at runtime; zero audio assets.
 
@@ -58,14 +60,40 @@ npm start            # serves dist/ + API on PORT (default 3000)
 | GET | `/api/leaderboard` | — | Top 100, sorted by score |
 | POST | `/api/score` | `{ username, address, score, distance, coins }` | Validates name + base58 Solana address, rate-limited, keeps best per address |
 
-Scores persist to `data/leaderboard.json` (git-ignored). For a serious launch,
-swap the JSON store for a real database and add signature-based verification —
-the store is isolated in `server.js`, so it's a small change.
+Scores persist to `data/leaderboard.json` locally (git-ignored). In production
+on Vercel, the store needs Redis — see below.
+
+## Deploying to Vercel
+
+Vercel's zero-config build only runs `vite build` and serves `dist/`; it never
+runs `server.js`. That's what `api/leaderboard.js` and `api/score.js` are for —
+they're the same logic, exposed as Vercel serverless functions. But those
+functions have a **read-only, ephemeral filesystem**, so a JSON file can't
+persist between invocations there. You need a real store:
+
+1. In the Vercel dashboard, open your project → **Storage** tab → **Create
+   Database** → pick a **Redis** option (Upstash, via the Marketplace).
+2. Connect it to the project — this auto-injects `KV_REST_API_URL` /
+   `KV_REST_API_TOKEN` (or `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN`)
+   as environment variables.
+3. Redeploy. `lib/store.js` detects those variables automatically and switches
+   from the JSON file to Redis — no code changes needed.
+
+Without step 1–2, the leaderboard API will still respond (so the "offline"
+message goes away), but scores won't survive a cold start or new deploy.
+
+For a serious launch, also add signature-based verification so a score can't
+be spoofed by hitting the API directly — `lib/store.js` is the place to add it.
 
 ## Project layout
 
 ```
 server.js          Express API + Vite middleware (dev) / static dist (prod)
+api/
+  leaderboard.js   GET  /api/leaderboard — Vercel serverless function
+  score.js         POST /api/score       — Vercel serverless function
+lib/
+  store.js         Shared leaderboard logic (Redis in prod, JSON file locally)
 index.html         UI shell — signup, HUD, leaderboard, game-over
 src/
   game.js          Orchestrator: loop, camera, lighting, post-processing, input
